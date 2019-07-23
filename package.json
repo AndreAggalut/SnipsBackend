@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend for snips app\r Build with MVP architecture and a filed-based DB",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndreAggalut/SnipsBackend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AndreAggalut/SnipsBackend/issues"
+  },
+  "homepage": "https://github.com/AndreAggalut/SnipsBackend#readme",
+  "dependencies": {
+    "shortid": "^2.2.14"
+  }
+}
