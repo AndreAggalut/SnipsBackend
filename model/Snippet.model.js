@@ -1,6 +1,7 @@
-const fs = require('fs').promises;
-const path = require('path');
 const shortid = require('shortid');
+const { readJsonFromDb, writeJsonToDb } = require('../utils/db.utils');
+const ErrorWithHttpStatus = require('../utils/ErrorWithHttpStatus');
+
 /**
  * @typedef {Object} Snippet
  * @property {string} id
@@ -19,16 +20,17 @@ const shortid = require('shortid');
  * @param {Snippet} newSnippet - the data to create the snippet with
  * @returns {Promise<Snippet>} the created snippet
  */
+
 exports.insert = async ({ author, code, title, description, language }) => {
   try {
     // check if the parameter is provided
     if (!author || !code || !title || !description || !language)
-      throw Error('Missing properties');
+      /* When the client messes up, you throw 400 error */
+      throw ErrorWithHttpStatus('Missing properties', 400);
     {
       // read snippets.json
       // 1.read the file
-      const dbpath = path.join(__dirname, '..', 'db', 'snippets.json');
-      const snippets = JSON.parse(await fs.readFile(dbpath));
+      const snippets = await readJsonFromDb('snippets');
       // grab data from the newSnippet(validate)
       // make newSnippet a proper object
       // generate default data(id,comments,favorites)
@@ -44,14 +46,15 @@ exports.insert = async ({ author, code, title, description, language }) => {
         comments: [],
         favorites: 0,
       });
-      await fs.writeFile(dbpath, JSON.stringify(snippets));
+      await writeJsonToDb('snippets', snippets);
       return snippets[snippets.length - 1];
-      // write to the file
+      // write to the file'
       // return fs.writeFile(dbpath, JSON.stringify(snippets));
     }
   } catch (err) {
-    console.log(err);
-    throw err;
+    if (err instanceof ErrorWithHttpStatus) throw err;
+    // throws error if the database goes down.
+    else throw new ErrorWithHttpStatus('Database Error');
   }
 };
 /* Read */
@@ -70,9 +73,7 @@ exports.insert = async ({ author, code, title, description, language }) => {
 exports.select = async (query = {}) => {
   try {
     // 1.read the file
-    const dbpath = path.join(__dirname, '..', 'db', 'snippets.json');
-    const snippets = JSON.parse(await fs.readFile(dbpath));
-
+    const snippets = await readJsonFromDb('snippets');
     // console.log(__dirname);
     // 2. Parse data
     // const parsedSnippets = JSON.parse(snippets);
@@ -85,9 +86,61 @@ exports.select = async (query = {}) => {
     // 3. return the data
     return filtered;
   } catch (err) {
-    console.log('Error in Snippet model');
+    throw new ErrorWithHttpStatus('Database error', 500);
+  }
+};
+/**
+ * Updates a snippet
+ * @param {string} id - id of the snippet to update
+ * @param {Snippet} newData - subset of values to update
+ *
+ */
+exports.update = async (id, newData) => {
+  // TODO: error on ID not found
+  // 1. read the file
+  const snippets = await readJsonFromDb('snippets');
+  // 2. find the snippet entry with id
+  // 3. update the snippet with appropriate data(make sure to validate!)
+  const updatedSnippets = snippets.map(snippet => {
+    // if its not the one we want just return it
+    // try {
+
+    if (snippet.id !== id) return snippet;
+    // turns the object into array
+    // loop over keys in new Data
+    Object.keys(newData).forEach(key => {
+      // if the key already exist on
+      if (key in snippet) snippet[key] = newData[key];
+    });
+
+    // } //catch (err) {} // TODO: 400 error on key DNE
+    // turns keys into array
+    return snippet;
+  });
+  // 4. Write back to db.
+  return writeJsonToDb('snippets', updatedSnippets);
+};
+
+/**
+ * Deletes a snippet
+ * @param {string} id
+ */
+exports.delete = async id => {
+  try {
+    // 1.read the file
+    const snippets = await readJsonFromDb('snippets');
+    // 2. Filter snippets for everything except snippet.id === id;
+    // see if snippet[key] = query[key];
+    const filtered = snippets.filter(snippet => snippet.id !== id);
+    // if the snippets is the same amount as before
+    if (filtered.length === snippets.length) return;
+    // write file
+    return writeJsonToDb('snippets', filtered);
+  } catch (err) {
+    // TODO: error if trying to delete a snippet DNE
     throw err;
   }
 };
-/* Update */
-/* Delete */
+
+// 3. write the file
+// };
