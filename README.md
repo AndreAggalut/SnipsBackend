@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/AndreAggalut/SnipsBackend.svg?branch=master)](https://travis-ci.com/AndreAggalut/SnipsBackend)
+
 #Snips backend
 
 Backend for snips app
